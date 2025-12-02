@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { ok } = require("assert");
 
 const filePath = path.join(__dirname, "../data/products.json");
 
@@ -27,7 +26,7 @@ const agregarLibro = (req, res) => {
         }
 
         const libros = leerLibros();
-        const existe = libros.find((l) => l.title === title);
+        const existe = libros.find((l) => l.titulo === titulo);
 
         if (existe) {
             return res.status(400).json({
@@ -38,9 +37,9 @@ const agregarLibro = (req, res) => {
 
         const nuevoLibro = {
             id : crypto.randomUUID(),
-            title,
+            titulo,
             autor,
-            price
+            precio
         }
 
         libros.push(nuevoLibro);
@@ -63,4 +62,43 @@ const agregarLibro = (req, res) => {
         return res.status(500).json(error.message);
     }
 
+}
+
+
+const listarLibros = (req, res) => {
+
+    try {
+        
+        const libros = leerLibros();
+
+        if (libros.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "No hay libros disponibles"
+            })
+        }
+
+        return res.status(200).json({
+            ok: true,
+            message: "Lista de libros obtenida correctamente",
+            data: {
+                length: libros.length,
+                libros
+            }
+        })
+
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(error.message);
+    }
+
+}
+
+
+
+
+module.exports = {
+    agregarLibro,
+    listarLibros
 }
