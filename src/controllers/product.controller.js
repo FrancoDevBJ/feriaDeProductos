@@ -52,7 +52,7 @@ const agregarLibro = (req, res) => {
             message: "Libro agregado correctamente",
             libro: {
                 id: nuevoLibro.id,
-                title: nuevoLibro.titulo,
+                titulo: nuevoLibro.titulo,
                 autor: nuevoLibro.autor,
                 precio: nuevoLibro.precio
             }
