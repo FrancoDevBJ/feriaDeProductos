@@ -5,8 +5,16 @@ const crypto = require("crypto");
 const filePath = path.join(__dirname, "../data/products.json");
 
 const leerLibros = () => {
-    const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data);
+    try {
+        const data = fs.readFileSync(filePath, "utf-8");
+        return JSON.parse(data);
+    } catch (error) {
+
+        if (error.code === 'ENOENT' || data === '') {
+            return [];
+        }
+        throw error;
+    }
 }
 
 const escribirLibros = (libros) => {
@@ -21,7 +29,7 @@ const agregarLibro = (req, res) => {
         if (!titulo || !autor || !precio) {
             return res.status(400).json({
                 ok: false,
-                message: "Faltan datos obligatorios"
+                message: "Faltan datos obligatorios (titulo, autor, precio)"
             })
         }
 
@@ -39,20 +47,18 @@ const agregarLibro = (req, res) => {
             id : crypto.randomUUID(),
             titulo,
             autor,
-            precio
+            precio: Number(precio)
         }
 
         libros.push(nuevoLibro);
-
         escribirLibros(libros);
-
 
         return res.status(201).json({
             ok: true,
             message: "Libro agregado correctamente",
             libro: {
                 id: nuevoLibro.id,
-                title: nuevoLibro.titulo,
+                titulo: nuevoLibro.titulo,
                 autor: nuevoLibro.autor,
                 precio: nuevoLibro.precio
             }
@@ -63,7 +69,6 @@ const agregarLibro = (req, res) => {
     }
 
 }
-
 
 const listarLibros = (req, res) => {
 
@@ -87,7 +92,6 @@ const listarLibros = (req, res) => {
             }
         })
 
-
     } catch (error) {
         console.log(error);
         return res.status(500).json(error.message);
@@ -95,10 +99,75 @@ const listarLibros = (req, res) => {
 
 }
 
+const modificarLibro = (req, res) => {
+    try {
+        const { id } = req.params; 
+        const { titulo, autor, precio } = req.body; 
 
+        const libros = leerLibros();
+        const index = libros.findIndex(l => l.id === id);
 
+        if (index === -1) {
+            return res.status(404).json({
+                ok: false,
+                message: 'Libro no encontrado para actualizar.'
+            });
+        }
+
+        const libroActualizado = {
+            ...libros[index],
+            titulo: titulo || libros[index].titulo,
+            autor: autor || libros[index].autor,
+            precio: precio ? Number(precio) : libros[index].precio
+        };
+
+        libros[index] = libroActualizado;
+        escribirLibros(libros);
+
+        return res.status(200).json({
+            ok: true,
+            message: 'Libro actualizado correctamente',
+            libro: libroActualizado
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(error.message);
+    }
+}
+
+const eliminarLibro = (req, res) => {
+    try {
+        const { id } = req.params; 
+
+        const libros = leerLibros();
+        const initialLength = libros.length;
+        const librosFiltrados = libros.filter(l => l.id !== id);
+
+        if (initialLength === librosFiltrados.length) {
+            return res.status(404).json({
+                ok: false,
+                message: 'Libro no encontrado para eliminar.'
+            });
+        }
+
+        escribirLibros(librosFiltrados);
+
+        return res.status(200).json({
+            ok: true,
+            message: 'Libro eliminado correctamente',
+            deletedId: id
+        });
+        
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(error.message);
+    }
+}
 
 module.exports = {
     agregarLibro,
-    listarLibros
+    listarLibros,
+    modificarLibro,
+    eliminarLibro
 }
